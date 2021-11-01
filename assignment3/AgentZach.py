@@ -12,11 +12,14 @@ from os.path import exists
 # Date: 26 October, 2021
 
 # How my agent works:
-# My agent will acknowledge when a new game begins, so they can confess on the last move. My agent has special
-# parameters to hold a grudge, become aggressive (and also become more aggressive), or randomly confess when my agent
-# would otherwise choose to be silent. Assignment of these parameters can be found in the params dictionary below. My
-# agent will also keep track of their opponents move history. The use of data structures is applied to counting the
-# length of games to hold a grudge. By assigning our parameters in the params dictionary, our agent can either be a nice
+# My agent will acknowledge when a new game begins and keep track of how many iterations will be played, along with
+# my opponents move history. By using this information, we can try to get the least jail time. My agent has special
+# parameters to hold a grudge, become aggressive (and also become more aggressive), randomly confess when my agent
+# would otherwise choose to be silent, and choose to confess on the final rounds. I figured the strategy of confessing
+# on only the final round of my opponents may be common, so we can confess on the last x amount of rounds.
+# Assignment of these parameters can be found in the params dictionary below. My agent will also keep track of their
+# opponents move history. The use of data structures is applied to counting the length of games to make decisions on
+# whether to be silent or confess. By assigning our parameters in the params dictionary, our agent can either be a nice
 # agent or a real asshole.
 
 ########################################################################################################################
@@ -31,6 +34,8 @@ params = {
     "hold_a_grudge": True,
     # How many turns my agent will hold a grudge (chooses confess) if the opponent initially chooses confess.
     "hold_a_grudge_length": 2,
+    # If this is true, then we will increase our hold_a_grudge_length by 1.
+    "hold_a_grudge_increment": True,
     # If random_confess = True, randomly become confess if my agent chooses to silent.
     "random_confess": True,
     # Chooses a number between 1 and random_confess_odds if random_confess = True. If my agent chooses to be silent,
@@ -41,10 +46,10 @@ params = {
     "become_aggressive": True,
     "aggressive_decrement": 1,
     "aggressive_cap": 5,
-    # If iterations is passed through when my agent is called, assign this to the iterations in the game. This is so we
-    # can confess on the last iteration. Only if confess_on_final_round = True.
-    "confess_on_final_round": True,
-    # Iterations in a game. IGNORE.
+    # Do we want to confess on the final x amount of rounds? x being the parameter confess_on_last.
+    "confess_on_final_rounds": True,
+    "confess_on_last": 4,
+    # Iterations in game to make sure we can confess on the final rounds. IGNORE.
     "iterations_in_game": 0,
     # Counter for holding a grudge. IGNORE.
     "hold_a_grudge_counter": 0
@@ -78,7 +83,7 @@ def load_file(file):
         return json.load(f)
 
 
-# Print all the elements from arrays. Used for debugging purposes. IGNORE.
+# Print all the elements from dictionaries. Used for debugging purposes. IGNORE.
 def print_data():
 
     print("\n\n\n-------------- PARAM FILE --------------")
@@ -141,6 +146,10 @@ if __name__ == "__main__":
 
             # If so, we assign our hold a grudge counter to hold a grudge length. Start a new grudge.
             params["hold_a_grudge_counter"] = params["hold_a_grudge_length"]
+
+            if params["hold_a_grudge_increment"]:
+                params["hold_a_grudge_length"] += 1
+
             print("confess")
 
         # Otherwise if hold a grudge is false, keep silent. Even if opponent's last move was confess.
@@ -157,12 +166,16 @@ if __name__ == "__main__":
     # Opponent silent.
     else:
 
-        # First, lets check if it is the last iteration in game. If so, confess.
-        if params["iterations_in_game"] == 1:
+        # First, lets check if we're playing the last few rounds.
+        if params["iterations_in_game"] <= params["confess_on_last"]:
 
-            print("confess")
+            # If so, lets check if confess_on_final_rounds is true.
+            if params["confess_on_final_rounds"]:
+                print("confess")
+            else:
+                print("silent")
 
-        # If its not the last iteration in game, lets check if our agent is currently holding a grudge or wants to
+        # If its not the last few iterations in game, lets check if our agent is currently holding a grudge or wants to
         # randomly confess.
         else:
 
